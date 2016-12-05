@@ -134,18 +134,6 @@ void ST7735_t3::writedata16(uint16_t d)
 	}
 }
 
-void ST7735_t3::writedata_last(uint8_t c) 
-{
-	if (hwSPI) {
-		uint32_t mcr = _pkinetisk_spi->MCR;
-		_pkinetisk_spi->PUSHR = c | (pcs_data << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_EOQ;
-		_pspin->waitTransmitComplete(mcr);
-	} else {
-		*rspin = 1;
-		spiwrite(c);
-	}
-}
-
 void ST7735_t3::writedata16_last(uint16_t d)
 {
 	if (hwSPI) {
@@ -157,6 +145,12 @@ void ST7735_t3::writedata16_last(uint16_t d)
 		spiwrite(d >> 8);
 		spiwrite(d);
 	}
+}
+
+void ST7735_t3::writecommand_last(uint8_t c) {
+	uint32_t mcr = _pkinetisk_spi->MCR;
+	_pkinetisk_spi->PUSHR = c | (pcs_command << 16) | SPI_PUSHR_CTAS(0) | SPI_PUSHR_EOQ;
+	_pspin->waitTransmitComplete(mcr);
 }
 
 
@@ -222,6 +216,11 @@ void ST7735_t3::writedata16_last(uint16_t d)
 	spiwrite(d >> 8);
 	spiwrite(d);
 } 
+
+void ST7735_t3::writecommand_last(uint8_t c) {
+	*rsport &= ~rspinmask;
+	spiwrite(c);
+}
 
 #endif //
 
@@ -724,7 +723,7 @@ void ST7735_t3::setRotation(uint8_t m)
 void ST7735_t3::invertDisplay(boolean i)
 {
 	beginSPITransaction();
-	writecommand(i ? ST7735_INVON : ST7735_INVOFF);
+	writecommand_last(i ? ST7735_INVON : ST7735_INVOFF);
 	endSPITransaction();
 
 }

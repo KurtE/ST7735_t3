@@ -151,9 +151,9 @@ class ST7735_t3 : public Adafruit_GFX {
            endSPITransaction(),
            spiwrite(uint8_t),
            writecommand(uint8_t c),
+           writecommand_last(uint8_t c),
            writedata(uint8_t d),
            writedata16(uint16_t d),
-           writedata_last(uint8_t d),
            writedata16_last(uint16_t d),
            commandList(const uint8_t *addr),
            commonInit(const uint8_t *cmdList);

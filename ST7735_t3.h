@@ -1,3 +1,4 @@
+// Kurt's SPIN version
 /***************************************************
   This is a library for the Adafruit 1.8" SPI display.
   This library works with the Adafruit 1.8" TFT Breakout w/SD card
@@ -20,8 +21,12 @@
 #define __ST7735_t3_H_
 
 #include "Arduino.h"
+#include <SPIN.h>
 
 #include <Adafruit_GFX.h>
+
+
+#define ST7735_SPICLOCK 12000000
 
 // some flags for initR() :(
 #define INITR_GREENTAB 0x0
@@ -100,8 +105,9 @@ class ST7735_t3 : public Adafruit_GFX {
 
  public:
 
-  ST7735_t3(uint8_t CS, uint8_t RS, uint8_t SID, uint8_t SCLK, uint8_t RST = -1);
-  ST7735_t3(uint8_t CS, uint8_t RS, uint8_t RST = -1);
+  ST7735_t3(uint8_t CS, uint8_t RS, uint8_t SID, uint8_t SCLK, uint8_t RST = -1, 
+        SPINClass *pspin=(SPINClass*)(&SPIN));
+  ST7735_t3(uint8_t CS, uint8_t RS, uint8_t RST = -1, SPINClass *pspin=(SPINClass*)(&SPIN));
 
   void     initB(void),                             // for ST7735B displays
            initR(uint8_t options = INITR_GREENTAB), // for ST7735R
@@ -115,6 +121,16 @@ class ST7735_t3 : public Adafruit_GFX {
              uint16_t color),
            setRotation(uint8_t r),
            invertDisplay(boolean i);
+
+  void setAddr(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+    __attribute__((always_inline)) {
+        writecommand(ST7735_CASET); // Column addr set
+        writedata16(x0+colstart);   // XSTART 
+        writedata16(x1+colstart);   // XEND
+        writecommand(ST7735_RASET); // Row addr set
+        writedata16(y0+rowstart);   // YSTART
+        writedata16(y1+rowstart);   // YEND
+  }
 
   // Pass 8-bit (each) R,G,B, get back 16-bit packed color
   inline uint16_t Color565(uint8_t r, uint8_t g, uint8_t b) {
@@ -133,11 +149,14 @@ class ST7735_t3 : public Adafruit_GFX {
  private:
   uint8_t  tabcolor;
 
-  void     writebegin(),
+  void     beginSPITransaction(),
+           endSPITransaction(),
            spiwrite(uint8_t),
            writecommand(uint8_t c),
            writedata(uint8_t d),
            writedata16(uint16_t d),
+           writedata_last(uint8_t d),
+           writedata16_last(uint16_t d),
            commandList(const uint8_t *addr),
            commonInit(const uint8_t *cmdList);
 //uint8_t  spiread(void);
@@ -164,6 +183,10 @@ volatile uint8_t *dataport, *clkport, *csport, *rsport;
   uint8_t pcs_data, pcs_command;
   uint32_t ctar;
   volatile uint8_t *datapin, *clkpin, *cspin, *rspin;
+
+  SPINClass *_pspin;
+  KINETISK_SPI_t *_pkinetisk_spi;
+
 #endif
 
 #if defined(__MKL26Z64__)

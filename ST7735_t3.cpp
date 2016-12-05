@@ -34,9 +34,14 @@ ST7735_t3::ST7735_t3(uint8_t cs, uint8_t rs, uint8_t sid, uint8_t sclk, uint8_t 
 	_rst  = rst;
 	hwSPI = false;
 
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 	// Note, I will cheat and if pins are HWSPI, I will use...
 	_pspin	  = pspin;
 	_pkinetisk_spi = _pspin->kinetisk_spi();
+#endif
+#if defined(__MKL26Z64__)
+	_pspin	  = pspin;
+#endif
 }
 
 
@@ -50,146 +55,21 @@ ST7735_t3::ST7735_t3(uint8_t cs, uint8_t rs, uint8_t rst, SPINClass *pspin) :
 	hwSPI = true;
 	_sid  = _sclk = (uint8_t)-1;
 
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 	_pspin	  = pspin;
 	_pkinetisk_spi = _pspin->kinetisk_spi();
-
+#endif
+#if defined(__MKL26Z64__)
+	_pspin	  = pspin;
+#endif
 }
 
-
-/***************************************************************/
-/*     Arduino Uno, Leonardo, Mega, Teensy 2.0, etc            */
-/***************************************************************/
-#if defined(__AVR__ )
-inline void ST7735_t3::beginSPITransaction()
-{
-}
-
-inline void ST7735_t3::endSPITransaction()
-{
-}
-
-inline void ST7735_t3::spiwrite(uint8_t c)
-{
-	if (hwSPI) {
-		SPDR = c;
-		while(!(SPSR & _BV(SPIF)));
-	} else {
-		// Fast SPI bitbang swiped from LPD8806 library
-		for(uint8_t bit = 0x80; bit; bit >>= 1) {
-			if(c & bit) *dataport |=  datapinmask;
-			else        *dataport &= ~datapinmask;
-			*clkport |=  clkpinmask;
-			*clkport &= ~clkpinmask;
-		}
-	}
-}
-
-void ST7735_t3::writecommand(uint8_t c)
-{
-	*rsport &= ~rspinmask;
-	*csport &= ~cspinmask;
-	spiwrite(c);
-	*csport |= cspinmask;
-}
-
-void ST7735_t3::writedata(uint8_t c)
-{
-	*rsport |=  rspinmask;
-	*csport &= ~cspinmask;
-	spiwrite(c);
-	*csport |= cspinmask;
-} 
-
-void ST7735_t3::writedata16(uint16_t d)
-{
-	*rsport |=  rspinmask;
-	*csport &= ~cspinmask;
-	spiwrite(d >> 8);
-	spiwrite(d);
-	*csport |= cspinmask;
-} 
-
-void ST7735_t3::setBitrate(uint32_t n)
-{
-	if (n >= 8000000) {
-		SPI.setClockDivider(SPI_CLOCK_DIV2);
-	} else if (n >= 4000000) {
-		SPI.setClockDivider(SPI_CLOCK_DIV4);
-	} else if (n >= 2000000) {
-		SPI.setClockDivider(SPI_CLOCK_DIV8);
-	} else {
-		SPI.setClockDivider(SPI_CLOCK_DIV16);
-	}
-}
-
-/***************************************************************/
-/*     Arduino Due                                             */
-/***************************************************************/
-#elif defined(__SAM3X8E__)
-inline void ST7735_t3::beginSPITransaction()
-{
-}
-
-inline void ST7735_t3::endSPITransaction()
-{
-}
-
-inline void ST7735_t3::spiwrite(uint8_t c)
-{
-	//Serial.println(c, HEX);
-	if (hwSPI) {
-		SPI.transfer(c);
-	} else {
-		// Fast SPI bitbang swiped from LPD8806 library
-		for(uint8_t bit = 0x80; bit; bit >>= 1) {
-			if(c & bit) dataport->PIO_SODR |= datapinmask;
-			else        dataport->PIO_CODR |= datapinmask;
-			clkport->PIO_SODR |= clkpinmask;
-			clkport->PIO_CODR |= clkpinmask;
-		}
-	}
-}
-
-void ST7735_t3::writecommand(uint8_t c)
-{
-	rsport->PIO_CODR |=  rspinmask;
-	csport->PIO_CODR  |=  cspinmask;
-	spiwrite(c);
-	csport->PIO_SODR  |=  cspinmask;
-}
-
-void ST7735_t3::writedata(uint8_t c)
-{
-	rsport->PIO_SODR |=  rspinmask;
-	csport->PIO_CODR  |=  cspinmask;
-	spiwrite(c);
-	csport->PIO_SODR  |=  cspinmask;
-} 
-
-void ST7735_t3::writedata16(uint16_t d)
-{
-	rsport->PIO_SODR |=  rspinmask;
-	csport->PIO_CODR  |=  cspinmask;
-	spiwrite(d >> 8);
-	spiwrite(d);
-	csport->PIO_SODR  |=  cspinmask;
-}
-
-void ST7735_t3::setBitrate(uint32_t n)
-{
-	uint32_t divider=1;
-	while (divider < 255) {
-		if (n >= 84000000 / divider) break;
-		divider = divider - 1;
-	}
-	SPI.setClockDivider(divider);
-}
 
 
 /***************************************************************/
 /*     Teensy 3.0, 3.1, 3.2, 3.5, 3.6                          */
 /***************************************************************/
-#elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 
 inline void ST7735_t3::beginSPITransaction()
 {
@@ -279,34 +159,6 @@ void ST7735_t3::writedata16_last(uint16_t d)
 	}
 }
 
-#define CTAR_24MHz   (SPI_CTAR_PBR(0) | SPI_CTAR_BR(0) | SPI_CTAR_CSSCK(0) | SPI_CTAR_DBR)
-#define CTAR_16MHz   (SPI_CTAR_PBR(1) | SPI_CTAR_BR(0) | SPI_CTAR_CSSCK(0) | SPI_CTAR_DBR)
-#define CTAR_12MHz   (SPI_CTAR_PBR(0) | SPI_CTAR_BR(0) | SPI_CTAR_CSSCK(0))
-#define CTAR_8MHz    (SPI_CTAR_PBR(1) | SPI_CTAR_BR(0) | SPI_CTAR_CSSCK(0))
-#define CTAR_6MHz    (SPI_CTAR_PBR(0) | SPI_CTAR_BR(1) | SPI_CTAR_CSSCK(1))
-#define CTAR_4MHz    (SPI_CTAR_PBR(1) | SPI_CTAR_BR(1) | SPI_CTAR_CSSCK(1))
-
-void ST7735_t3::setBitrate(uint32_t n)
-{
-	if (n >= 24000000) {
-		ctar = CTAR_24MHz;
-	} else if (n >= 16000000) {
-		ctar = CTAR_16MHz;
-	} else if (n >= 12000000) {
-		ctar = CTAR_12MHz;
-	} else if (n >= 8000000) {
-		ctar = CTAR_8MHz;
-	} else if (n >= 6000000) {
-		ctar = CTAR_6MHz;
-	} else {
-		ctar = CTAR_4MHz;
-	}
-	SIM_SCGC6 |= SIM_SCGC6_SPI0;
-	_pkinetisk_spi->MCR = SPI_MCR_MDIS | SPI_MCR_HALT;
-	_pkinetisk_spi->CTAR0 = ctar | SPI_CTAR_FMSZ(7);
-	_pkinetisk_spi->CTAR1 = ctar | SPI_CTAR_FMSZ(15);
-	_pkinetisk_spi->MCR = SPI_MCR_MSTR | SPI_MCR_PCSIS(0x1F) | SPI_MCR_CLR_TXF | SPI_MCR_CLR_RXF;
-}
 
 /***************************************************************/
 /*     Teensy LC                                               */
@@ -315,17 +167,14 @@ void ST7735_t3::setBitrate(uint32_t n)
 inline void ST7735_t3::beginSPITransaction()
 {
 	if (hwSPI) {
-		_pspin->beginTransaction(SPISettings(clock, MSBFIRST, SPI_MODE0));
+		_pspin->beginTransaction(SPISettings(ST7735_SPICLOCK, MSBFIRST, SPI_MODE0));
 	}
-	if (cspin) {
-		*csport &= ~cspinmask;
-	}
+	*csport &= ~cspinmask;
 }
 
 inline void ST7735_t3::endSPITransaction()
 {
-	if (cspin)
-		*csport |= cspinmask;
+	*csport |= cspinmask;
 	if (hwSPI) {
 		_pspin->endTransaction();	
 	}
@@ -336,9 +185,7 @@ inline void ST7735_t3::spiwrite(uint8_t c)
 {
 //Serial.println(c, HEX);
 	if (hwSPI) {
-		SPI.transfer(c);
-	} else if (hwSPI1) {
-		SPI1.transfer(c);
+		_pspin->transfer(c);
 	} else {
 		// Fast SPI bitbang swiped from LPD8806 library
 		for(uint8_t bit = 0x80; bit; bit >>= 1) {
@@ -353,41 +200,30 @@ inline void ST7735_t3::spiwrite(uint8_t c)
 void ST7735_t3::writecommand(uint8_t c)
 {
 	*rsport &= ~rspinmask;
-	*csport &= ~cspinmask;
 	spiwrite(c);
-	*csport |= cspinmask;
 }
 
 void ST7735_t3::writedata(uint8_t c)
 {
 	*rsport |=  rspinmask;
-	*csport &= ~cspinmask;
 	spiwrite(c);
-	*csport |= cspinmask;
 } 
 
 void ST7735_t3::writedata16(uint16_t d)
 {
 	*rsport |=  rspinmask;
-	*csport &= ~cspinmask;
 	spiwrite(d >> 8);
 	spiwrite(d);
-	*csport |= cspinmask;
 } 
 
-void ST7735_t3::setBitrate(uint32_t n)
+void ST7735_t3::writedata16_last(uint16_t d)
 {
-	if (n >= 8000000) {
-		SPI.setClockDivider(SPI_CLOCK_DIV2);
-	} else if (n >= 4000000) {
-		SPI.setClockDivider(SPI_CLOCK_DIV4);
-	} else if (n >= 2000000) {
-		SPI.setClockDivider(SPI_CLOCK_DIV8);
-	} else {
-		SPI.setClockDivider(SPI_CLOCK_DIV16);
-	}
-}
-#endif //#if defined(__SAM3X8E__)
+	*rsport |=  rspinmask;
+	spiwrite(d >> 8);
+	spiwrite(d);
+} 
+
+#endif //
 
 
 // Rather than a bazillion writecommand() and writedata() calls, screen
@@ -569,62 +405,7 @@ void ST7735_t3::commonInit(const uint8_t *cmdList)
 {
 	colstart  = rowstart = 0; // May be overridden in init func
 
-#ifdef __AVR__
-	pinMode(_rs, OUTPUT);
-	pinMode(_cs, OUTPUT);
-	csport    = portOutputRegister(digitalPinToPort(_cs));
-	rsport    = portOutputRegister(digitalPinToPort(_rs));
-	cspinmask = digitalPinToBitMask(_cs);
-	rspinmask = digitalPinToBitMask(_rs);
-
-	if(hwSPI) { // Using hardware SPI
-		SPI.begin();
-		SPI.setClockDivider(SPI_CLOCK_DIV4); // 4 MHz (half speed)
-		SPI.setBitOrder(MSBFIRST);
-		SPI.setDataMode(SPI_MODE0);
-	} else {
-		pinMode(_sclk, OUTPUT);
-		pinMode(_sid , OUTPUT);
-		clkport     = portOutputRegister(digitalPinToPort(_sclk));
-		dataport    = portOutputRegister(digitalPinToPort(_sid));
-		clkpinmask  = digitalPinToBitMask(_sclk);
-		datapinmask = digitalPinToBitMask(_sid);
-		*clkport   &= ~clkpinmask;
-		*dataport  &= ~datapinmask;
-	}
-	// toggle RST low to reset; CS low so it'll listen to us
-	*csport &= ~cspinmask;
-
-
-#elif defined(__SAM3X8E__)
-	pinMode(_rs, OUTPUT);
-	pinMode(_cs, OUTPUT);
-	csport    = digitalPinToPort(_cs);
-	rsport    = digitalPinToPort(_rs);
-	cspinmask = digitalPinToBitMask(_cs);
-	rspinmask = digitalPinToBitMask(_rs);
-
-	if(hwSPI) { // Using hardware SPI
-		SPI.begin();
-		SPI.setClockDivider(21); // 4 MHz
-		//Due defaults to 4mHz (clock divider setting of 21), but we'll set it anyway 
-		SPI.setBitOrder(MSBFIRST);
-		SPI.setDataMode(SPI_MODE0);
-	} else {
-		pinMode(_sclk, OUTPUT);
-		pinMode(_sid , OUTPUT);
-		clkport     = digitalPinToPort(_sclk);
-		dataport    = digitalPinToPort(_sid);
-		clkpinmask  = digitalPinToBitMask(_sclk);
-		datapinmask = digitalPinToBitMask(_sid);
-		clkport ->PIO_CODR  |=  clkpinmask; // Set control bits to LOW (idle)
-		dataport->PIO_CODR  |=  datapinmask; // Signals are ACTIVE HIGH
-	}
-	// toggle RST low to reset; CS low so it'll listen to us
-	csport ->PIO_CODR  |=  cspinmask; // Set control bits to LOW (idle)
-
-
-#elif defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 //////////////////////////
    // verify SPI pins are valid;
 	// allow user to say use current ones...
@@ -695,37 +476,24 @@ void ST7735_t3::commonInit(const uint8_t *cmdList)
 	if (_sid == (uint8_t)-1) _sid = 11;
 	if (_sclk == (uint8_t)-1) _sclk = 13;
 	
-	// See if pins are on standard SPI0
-	if ((_sid == 7 || _sid == 11) && (_sclk == 13 || _sclk == 14)) {
-		hwSPI = true;
-	} else {
-		hwSPI = false;
-		if ((_sid == 0 || _sid == 21) && (_sclk == 20 )) {
-			hwSPI1 = true;
+	if (!(_pspin->pinIsMOSI(_sid)) || !(_pspin->pinIsSCK(_sclk))) {
+		#ifdef SPIN1_OBJECT_CREATED			
+		if (SPIN1.pinIsMOSI(_sid) && SPIN1.pinIsSCK(_sclk)) {
+			_pspin = &SPIN1;
+			Serial.println("SST7735_t3: SPIN1 automatically selected");
+		} else {
+		#endif
+			hwSPI = false;
+		#ifdef SPIN1_OBJECT_CREATED			
 		}
-	}
- 
-	pinMode(_rs, OUTPUT);
-	pinMode(_cs, OUTPUT);
-	csport    = portOutputRegister(digitalPinToPort(_cs));
-	rsport    = portOutputRegister(digitalPinToPort(_rs));
-	cspinmask = digitalPinToBitMask(_cs);
-	rspinmask = digitalPinToBitMask(_rs);
+		#endif
 
-	if(hwSPI) { // Using hardware SPI
-		if (_sclk == 14) SPI.setSCK(14);
-		if (_sid == 7) SPI.setMOSI(7);
-		SPI.begin();
-		SPI.setClockDivider(SPI_CLOCK_DIV4); // 4 MHz (half speed)
-		SPI.setBitOrder(MSBFIRST);
-		SPI.setDataMode(SPI_MODE0);
-	} else if(hwSPI1) { // Using hardware SPI
-		SPI1.setSCK(_sclk);
-		SPI1.setMOSI(_sid);
-		SPI1.begin();
-		SPI1.setClockDivider(SPI_CLOCK_DIV4); // 4 MHz (half speed)
-		SPI1.setBitOrder(MSBFIRST);
-		SPI1.setDataMode(SPI_MODE0);
+	}
+	if (hwSPI) {
+        _pspin->setMOSI(_sid);
+		_pspin->setSCK(_sclk);
+
+		_pspin->begin();
 	} else {
 		pinMode(_sclk, OUTPUT);
 		pinMode(_sid , OUTPUT);

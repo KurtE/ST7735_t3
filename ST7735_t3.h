@@ -1,4 +1,4 @@
-// Kurt's SPIN version
+// Kurt's SPIN version only compiles for Teensy 3.x and TLC
 /***************************************************
   This is a library for the Adafruit 1.8" SPI display.
   This library works with the Adafruit 1.8" TFT Breakout w/SD card
@@ -136,8 +136,6 @@ class ST7735_t3 : public Adafruit_GFX {
   inline uint16_t Color565(uint8_t r, uint8_t g, uint8_t b) {
            return ((b & 0xF8) << 8) | ((g & 0xFC) << 3) | (r >> 3);
   }
-  void setBitrate(uint32_t n);
-
   /* These are not for current use, 8-bit protocol only!
   uint8_t  readdata(void),
            readcommand8(uint8_t);
@@ -163,20 +161,6 @@ class ST7735_t3 : public Adafruit_GFX {
 
   boolean  hwSPI;
 
-#if defined(__AVR__)
-volatile uint8_t *dataport, *clkport, *csport, *rsport;
-  uint8_t  _cs, _rs, _rst, _sid, _sclk,
-           datapinmask, clkpinmask, cspinmask, rspinmask,
-           colstart, rowstart; // some displays need this changed
-#endif //  #ifdef __AVR__
-
-#if defined(__SAM3X8E__)
-  Pio *dataport, *clkport, *csport, *rsport;
-  uint32_t  _cs, _rs, _rst, _sid, _sclk,
-            datapinmask, clkpinmask, cspinmask, rspinmask,
-            colstart, rowstart; // some displays need this changed
-#endif //  #if defined(__SAM3X8E__)
-
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
   uint8_t  _cs, _rs, _rst, _sid, _sclk;
   uint8_t colstart, rowstart;
@@ -195,6 +179,8 @@ volatile uint8_t *dataport, *clkport, *csport, *rsport;
            datapinmask, clkpinmask, cspinmask, rspinmask,
            colstart, rowstart; // some displays need this changed
   boolean  hwSPI1;
+
+  SPINClass *_pspin;
 #endif //  #ifdef __AVR__
 
 };

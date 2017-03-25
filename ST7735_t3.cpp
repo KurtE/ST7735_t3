@@ -451,9 +451,9 @@ void ST7735_t3::commonInit(const uint8_t *cmdList)
 			pinMode(_cs, OUTPUT);
 			cspin = portOutputRegister(digitalPinToPort(_cs));
 			*cspin = 1;
-			Serial.println("SST7735_t3: Manual CS Pin");
+			//Serial.println("SST7735_t3: Manual CS Pin");
 		}
-		Serial.println("SST7735_t3: Using Hardware SPI");
+		//Serial.println("SST7735_t3: Using Hardware SPI");
 	} else {
 		hwSPI = false;
 		cspin = portOutputRegister(digitalPinToPort(_cs));
@@ -540,8 +540,8 @@ void ST7735_t3::initR(uint8_t options)
 	} else if(options == INITR_144GREENTAB) {
 		_height = ST7735_TFTHEIGHT_144;
 		commandList(Rcmd2green144);
-		colstart = 2;
-		rowstart = 3;
+		colstart = 0;
+		rowstart = 32;
 	} else {
 		// colstart, rowstart left at default '0' values
 		commandList(Rcmd2red);

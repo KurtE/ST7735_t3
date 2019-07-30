@@ -386,8 +386,6 @@ volatile uint8_t *dataport, *clkport, *csport, *rsport;
   DMAChannel   _dmatx;
   uint8_t      _cnt_dma_settings;   // how many do we need for this display?
   #elif defined(__IMXRT1052__) || defined(__IMXRT1062__)  // Teensy 4.x
-  #define T4_BUFFER_DMA
-  #ifdef T4_BUFFER_DMA
   // try work around DMA memory cached.  So have a couple of buffers we copy frame buffer into
   // as to move it out of the memory that is cached...
   DMASetting   _dmasettings[2];
@@ -399,12 +397,6 @@ volatile uint8_t *dataport, *clkport, *csport, *rsport;
   static const uint16_t    DMA_BUFFER_SIZE = 512;
   uint16_t          _dma_buffer1[DMA_BUFFER_SIZE] __attribute__ ((aligned(4)));
   uint16_t          _dma_buffer2[DMA_BUFFER_SIZE] __attribute__ ((aligned(4)));
-  #else
-  // Don't buffer DMA 
-  DMASetting   _dmasettings[3];
-  DMAChannel   _dmatx;
-  uint8_t      _cnt_dma_settings;   // how many do we need for this display?
-  #endif
   uint32_t      _spi_fcr_save;    // save away previous FCR register value
 
   #elif defined(__MK64FX512__)

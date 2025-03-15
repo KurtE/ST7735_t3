@@ -263,7 +263,10 @@ class ST7735_t3 : public Print
 	void inline drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size) 
 	    { drawChar(x, y, c, color, bg, size, size);}
 	
+	#ifndef CENTER
 	static const int16_t CENTER = 9998;
+	#endif
+	
 	void setCursor(int16_t x, int16_t y, bool autoCenter=false);
     void getCursor(int16_t *x, int16_t *y);
 	void setTextColor(uint16_t c);
